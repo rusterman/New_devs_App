@@ -23,12 +23,13 @@
 - **Precision hardening**: dashboard totals quantized to 2 decimals using `Decimal(..., ROUND_HALF_UP)`.
 - **Safety check**: dashboard now requires tenant context instead of silently using a default tenant.
 - **Tenant-scoped property selector**: replaced hardcoded property list in `frontend/src/components/Dashboard.tsx` with `SecureAPI.getAllProperties()` data.
-- **Monthly revenue implementation**: replaced placeholder `0` in `calculate_monthly_revenue()` with real tenant-scoped SQL aggregation.
+- **Monthly revenue implementation**: replaced placeholder `0` in `calculate_monthly_revenue()` with real tenant-scoped SQL aggregation using property-local timezone month boundaries.
 
 ## How We Found Extra Issues (Short)
 
 - **Property list issue**: both users saw same dropdown options; code review showed hardcoded `PROPERTIES` array in dashboard.
 - **Monthly revenue issue**: service review showed `calculate_monthly_revenue()` returned constant `0`, not DB data.
+- **Timezone boundary validation**: `res-tz-1` (`2024-02-29 23:30:00+00`) becomes `2024-03-01 00:30:00` in `Europe/Paris`; March total for `tenant-a/prop-001` is `2250.000` with local-time filtering vs `1000.000` with naive UTC filtering.
 
 ## Outcome
 
