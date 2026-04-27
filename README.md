@@ -22,8 +22,15 @@
 - **Tenant-safe fallback**: fallback mock data now keyed by `(tenant_id, property_id)`.
 - **Precision hardening**: dashboard totals quantized to 2 decimals using `Decimal(..., ROUND_HALF_UP)`.
 - **Safety check**: dashboard now requires tenant context instead of silently using a default tenant.
+- **Tenant-scoped property selector**: replaced hardcoded property list in `frontend/src/components/Dashboard.tsx` with `SecureAPI.getAllProperties()` data.
+- **Monthly revenue implementation**: replaced placeholder `0` in `calculate_monthly_revenue()` with real tenant-scoped SQL aggregation.
+
+## How We Found Extra Issues (Short)
+
+- **Property list issue**: both users saw same dropdown options; code review showed hardcoded `PROPERTIES` array in dashboard.
+- **Monthly revenue issue**: service review showed `calculate_monthly_revenue()` returned constant `0`, not DB data.
 
 ## Outcome
 
 Main issue was in the **cache layer**.  
-Service and API hardening fixes prevent cross-tenant fallback leakage and reduce cent-level precision drift.
+Service, API, and frontend fixes now enforce tenant isolation across dashboard data and property selection, with monthly totals no longer hardcoded to zero.
