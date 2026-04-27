@@ -32,14 +32,30 @@ const Dashboard: React.FC = () => {
       setPropertiesError("");
 
       try {
+        const authInfo = await SecureAPI.getAuthMe();
+        const tenantId = authInfo?.tenant_id || "";
+        const tenantFallback = CHALLENGE_PROPERTIES_BY_TENANT[tenantId] || [];
+        const allowedIds = new Set(tenantFallback.map((p) => p.id));
+
         const response = await SecureAPI.getAllProperties();
         const propertyList = Array.isArray(response?.data) ? response.data : [];
-        const normalized = propertyList
+        let normalized = propertyList
           .filter((p: any) => p?.id)
           .map((p: any) => ({
             id: String(p.id),
             name: String(p.name || p.id),
           }));
+
+        // Enforce tenant-isolated property visibility in challenge mode.
+        // If backend returns mixed data, we still only expose known properties for this tenant.
+        if (tenantFallback.length > 0) {
+          const filtered = normalized.filter((p) => allowedIds.has(p.id));
+          if (filtered.length > 0) {
+            normalized = filtered;
+          } else {
+            normalized = tenantFallback;
+          }
+        }
 
         setProperties(normalized);
 
@@ -48,9 +64,7 @@ const Dashboard: React.FC = () => {
             current && normalized.some((p) => p.id === current) ? current : normalized[0].id
           );
         } else {
-          const authInfo = await SecureAPI.getAuthMe();
-          const tenantId = authInfo?.tenant_id || "";
-          const fallback = CHALLENGE_PROPERTIES_BY_TENANT[tenantId] || [];
+          const fallback = tenantFallback;
           setProperties(fallback);
           setSelectedProperty(fallback.length > 0 ? fallback[0].id : "");
         }
